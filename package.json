@@ -1,0 +1,14 @@
+{
+  "name": "ride-matching-app",
+  "version": "1.0.0",
+  "description": "Ride matching app with React + Node.js + C KD-tree",
+  "scripts": {
+    "backend": "cd backend && node server.js",
+    "frontend": "cd frontend && npm run dev",
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "build-c": "cd c-backend && build.bat"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
