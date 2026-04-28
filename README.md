@@ -12,6 +12,23 @@ A high-performance ride-matching application featuring a **React** frontend, a *
 
 ---
 
+## ⚡ Quick Start
+
+If you have **Node.js** and **GCC** installed, run these commands to get started immediately:
+
+```bash
+# 1. Install all dependencies
+npm install && cd backend && npm install && cd ../frontend && npm install && cd ..
+
+# 2. Build the C engine
+npm run build-c
+
+# 3. Run the app (Frontend + Backend)
+npm run dev
+```
+
+---
+
 ## 🛠️ Prerequisites
 
 Before you begin, ensure you have the following installed:
@@ -25,7 +42,7 @@ Before you begin, ensure you have the following installed:
 
 ### 1. Clone the Repository
 ```bash
-git clone <repository-url>
+git clone https://github.com/25mcmc21-dakshdua/ds_project.git
 cd ride-matching-app
 ```
 
