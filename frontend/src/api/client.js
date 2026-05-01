@@ -14,14 +14,6 @@ export async function addDriver(x, y) {
   return res.json();
 }
 
-export async function updateDriver(index, x, y) {
-  const res = await fetch(`${API_BASE}/drivers/${index}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ x, y }),
-  });
-  return res.json();
-}
 
 export async function removeDriver(index) {
   const res = await fetch(`${API_BASE}/drivers/${index}`, {

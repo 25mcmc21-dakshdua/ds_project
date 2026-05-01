@@ -18,7 +18,6 @@ function App() {
     radiusValue,
     setRadiusValue,
     handleCanvasClick,
-    handleUpdateDriver,
     handleRemoveDriver,
     handleClear,
     triggerFindNearest,
@@ -73,7 +72,6 @@ function App() {
           loading={loading}
           radius={radiusValue}
           onCanvasClick={handleCanvasClick}
-          onUpdateDriver={handleUpdateDriver}
         />
       </main>
     </div>

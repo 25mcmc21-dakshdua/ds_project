@@ -101,27 +101,6 @@ export function useRideMatch() {
     }
   }, [mode, kValue, radiusValue, refreshDrivers, drivers]);
 
-  // Update driver location (drag)
-  const handleUpdateDriver = useCallback(async (index, x, y) => {
-    try {
-      const result = await api.updateDriver(index, x, y);
-      if (result.status === 'ok') {
-        setDrivers(prev => prev.map(d => d.index === index ? { ...d, x, y } : d));
-        // Update match result if the moved driver was part of it
-        setMatchResult(prev => {
-          if (!prev) return null;
-          if (Array.isArray(prev)) {
-            return prev.map(res => res.index === index ? { ...res, x, y } : res);
-          } else if (prev.index === index) {
-            return { ...prev, x, y };
-          }
-          return prev;
-        });
-      }
-    } catch (err) {
-      console.error('Update driver error:', err);
-    }
-  }, []);
 
   // Remove a driver
   const handleRemoveDriver = useCallback(async (index) => {
@@ -217,7 +196,6 @@ export function useRideMatch() {
     radiusValue,
     setRadiusValue,
     handleCanvasClick,
-    handleUpdateDriver,
     handleRemoveDriver,
     handleClear,
     triggerFindNearest,

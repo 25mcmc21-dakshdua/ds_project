@@ -10,22 +10,20 @@ typedef struct {
 } Driver;
 
 typedef struct Node {
-    double point[K];
+    int point[K];
     int index;
-    int axis; // Added for range search
     struct Node *left, *right;
 } Node;
 
 // KD-tree operations
-Node* newNode(double x, double y, int idx, int axis);
-Node* insert(Node* root, double x, double y, int idx, int depth);
-void nearest(Node* root, double px, double py, int* bestIdx, double* bestDist, int depth);
+Node* newNode(int coords[K], int idx);
+Node* insert(Node* root, int coords[K], int idx, int depth);
+void nearest(Node* root, int target[K], int* bestIdx, double* bestDistSq, int depth);
 void freeTree(Node* root);
 
 // Driver management
 int addDriver(double x, double y);
 int removeDriver(int index);
-int updateDriverPosition(int index, double newX, double newY);
 int findNearestDriver(double px, double py, int* outIdx, double* outDist);
 int findDriversInRadius(double px, double py, double radius, int* outIndices);
 int getDriverCount(void);

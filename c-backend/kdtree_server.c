@@ -82,22 +82,6 @@ void handleList() {
     fflush(stdout);
 }
 
-void handleUpdate(char* args) {
-    int index;
-    double x, y;
-    if (sscanf(args, "%d|%lf|%lf", &index, &x, &y) != 3) {
-        printf("{\"status\":\"error\",\"message\":\"Invalid UPDATE args\"}\n");
-        fflush(stdout);
-        return;
-    }
-
-    if (updateDriverPosition(index, x, y)) {
-        printf("{\"status\":\"ok\",\"index\":%d,\"x\":%.2f,\"y\":%.2f}\n", index, x, y);
-    } else {
-        printf("{\"status\":\"error\",\"message\":\"Driver not found\"}\n");
-    }
-    fflush(stdout);
-}
 
 
 void handleRange(char* args) {
@@ -156,8 +140,6 @@ int main() {
             handleRemove(args);
         } else if (strcmp(cmd, "LIST") == 0) {
             handleList();
-        } else if (strcmp(cmd, "UPDATE") == 0) {
-            handleUpdate(args);
         } else if (strcmp(cmd, "RANGE") == 0) {
             handleRange(args);
         } else if (strcmp(cmd, "CLEAR") == 0) {

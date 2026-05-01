@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, useState } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 
 const CANVAS_WIDTH = 1000;
 const CANVAS_HEIGHT = 1000;
@@ -11,17 +11,12 @@ export default function Canvas({
   mode, 
   loading, 
   radius,
-  onCanvasClick,
-  onUpdateDriver 
+  onCanvasClick
 }) {
   const canvasRef = useRef(null);
   const animFrameRef = useRef(null);
   const timeRef = useRef(0);
   
-  // Drag state
-  const [isDragging, setIsDragging] = useState(false);
-  const dragTargetRef = useRef(null);
-
   const draw = useCallback((timestamp) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -205,49 +200,7 @@ export default function Canvas({
     };
   }, [draw]);
 
-  // Interaction handlers
-  const handleMouseDown = (e) => {
-    if (mode !== 'add-driver') return;
-    
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    // Check if clicked on a driver
-    const clickedDriver = drivers.find(d => {
-      const dist = Math.sqrt((d.x - x)**2 + (d.y - y)**2);
-      return dist < 15;
-    });
-
-    if (clickedDriver) {
-      setIsDragging(true);
-      dragTargetRef.current = clickedDriver.index;
-    }
-  };
-
-  const handleMouseMove = (e) => {
-    if (!isDragging || dragTargetRef.current === null) return;
-
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    const x = Math.round(e.clientX - rect.left);
-    const y = Math.round(e.clientY - rect.top);
-
-    onUpdateDriver(dragTargetRef.current, x, y);
-  };
-
-  const handleMouseUp = (e) => {
-    if (isDragging) {
-      setIsDragging(false);
-      dragTargetRef.current = null;
-    }
-  };
-
   const handleClick = (e) => {
-    // Only trigger click if we weren't dragging
-    if (isDragging || dragTargetRef.current !== null) return;
-    
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
     const x = Math.round(e.clientX - rect.left);
@@ -261,15 +214,12 @@ export default function Canvas({
         ref={canvasRef}
         width={CANVAS_WIDTH}
         height={CANVAS_HEIGHT}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
         onClick={handleClick}
-        style={{ cursor: isDragging ? 'grabbing' : (mode === 'add-driver' ? 'crosshair' : (mode === 'delete-driver' ? 'not-allowed' : 'pointer')) }}
+        style={{ cursor: (mode === 'add-driver' ? 'crosshair' : (mode === 'delete-driver' ? 'not-allowed' : 'pointer')) }}
       />
       <div className="canvas-overlay">
         <span className={`dot ${mode === 'add-driver' ? 'green' : (mode === 'delete-driver' ? 'red' : 'orange')}`}></span>
-        {mode === 'add-driver' ? 'Add Driver (Click) / Move (Drag)' : 
+        {mode === 'add-driver' ? 'Add Driver (Click)' : 
          mode === 'add-passenger' ? 'Place Passenger' :
          mode === 'find-nearest' ? 'Find Nearest (Click Canvas)' :
          mode === 'search-radius' ? 'Search Radius (Click Canvas)' :

@@ -147,20 +147,6 @@ app.delete('/api/drivers/:index', async (req, res) => {
   }
 });
 
-// PUT /api/drivers/:index — Update a driver { x, y }
-app.put('/api/drivers/:index', async (req, res) => {
-  try {
-    const index = parseInt(req.params.index);
-    const { x, y } = req.body;
-    if (x === undefined || y === undefined) {
-      return res.status(400).json({ status: 'error', message: 'x and y are required' });
-    }
-    const result = await sendCommand(`UPDATE|${index}|${x}|${y}`);
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ status: 'error', message: err.message });
-  }
-});
 
 // POST /api/find — Find nearest driver { x, y }
 app.post('/api/find', async (req, res) => {
