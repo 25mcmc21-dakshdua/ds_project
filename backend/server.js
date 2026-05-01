@@ -176,19 +176,7 @@ app.post('/api/find', async (req, res) => {
   }
 });
 
-// POST /api/find-k — Find K nearest drivers { x, y, k }
-app.post('/api/find-k', async (req, res) => {
-  try {
-    const { x, y, k } = req.body;
-    if (x === undefined || y === undefined || k === undefined) {
-      return res.status(400).json({ status: 'error', message: 'x, y, and k are required' });
-    }
-    const result = await sendCommand(`FIND_K|${x}|${y}|${k}`);
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ status: 'error', message: err.message });
-  }
-});
+
 
 // POST /api/range — Find drivers in radius { x, y, radius }
 app.post('/api/range', async (req, res) => {

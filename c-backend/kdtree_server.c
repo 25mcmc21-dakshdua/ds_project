@@ -99,29 +99,6 @@ void handleUpdate(char* args) {
     fflush(stdout);
 }
 
-void handleFindK(char* args) {
-    double x, y;
-    int k;
-    if (sscanf(args, "%lf|%lf|%d", &x, &y, &k) != 3) {
-        printf("{\"status\":\"error\",\"message\":\"Invalid FIND_K args\"}\n");
-        fflush(stdout);
-        return;
-    }
-
-    int indices[MAX_DRIVERS];
-    double dists[MAX_DRIVERS];
-    int count = findKNearestDrivers(x, y, k, indices, dists);
-
-    printf("{\"status\":\"ok\",\"count\":%d,\"results\":[", count);
-    for (int i = 0; i < count; i++) {
-        int idx = indices[i];
-        if (i > 0) printf(",");
-        printf("{\"index\":%d,\"x\":%.2f,\"y\":%.2f,\"distance\":%.2f}",
-               idx, drivers[idx].x, drivers[idx].y, dists[i]);
-    }
-    printf("]}\n");
-    fflush(stdout);
-}
 
 void handleRange(char* args) {
     double x, y, radius;
@@ -181,8 +158,6 @@ int main() {
             handleList();
         } else if (strcmp(cmd, "UPDATE") == 0) {
             handleUpdate(args);
-        } else if (strcmp(cmd, "FIND_K") == 0) {
-            handleFindK(args);
         } else if (strcmp(cmd, "RANGE") == 0) {
             handleRange(args);
         } else if (strcmp(cmd, "CLEAR") == 0) {

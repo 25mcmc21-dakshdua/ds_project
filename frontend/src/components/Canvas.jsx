@@ -66,7 +66,7 @@ export default function Canvas({
     }
 
     // Range search circle
-    if (mode === 'range' && passengerPos) {
+    if (mode === 'search-radius' && passengerPos) {
       ctx.strokeStyle = 'rgba(59, 130, 246, 0.2)';
       ctx.lineWidth = 2;
       ctx.setLineDash([5, 5]);
@@ -158,11 +158,6 @@ export default function Canvas({
       ctx.font = `${isMatched ? 14 : 12}px Inter`;
       ctx.textAlign = 'center';
       ctx.fillText('🚗', driver.x, driver.y - ringRadius - 6);
-
-      // Index label
-      ctx.fillStyle = 'rgba(255,255,255,0.4)';
-      ctx.font = '9px Inter';
-      ctx.fillText(`#${driver.index}`, driver.x, driver.y + ringRadius + 12);
     });
 
     // Draw passenger
@@ -212,7 +207,7 @@ export default function Canvas({
 
   // Interaction handlers
   const handleMouseDown = (e) => {
-    if (mode !== 'driver') return;
+    if (mode !== 'add-driver') return;
     
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
@@ -270,11 +265,15 @@ export default function Canvas({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onClick={handleClick}
-        style={{ cursor: isDragging ? 'grabbing' : (mode === 'driver' ? 'crosshair' : 'pointer') }}
+        style={{ cursor: isDragging ? 'grabbing' : (mode === 'add-driver' ? 'crosshair' : (mode === 'delete-driver' ? 'not-allowed' : 'pointer')) }}
       />
       <div className="canvas-overlay">
-        <span className={`dot ${mode === 'driver' ? 'green' : 'orange'}`}></span>
-        {mode === 'driver' ? 'Add (Click) / Remove (Click Driver) / Move (Drag)' : `Mode: ${mode}`}
+        <span className={`dot ${mode === 'add-driver' ? 'green' : (mode === 'delete-driver' ? 'red' : 'orange')}`}></span>
+        {mode === 'add-driver' ? 'Add Driver (Click) / Move (Drag)' : 
+         mode === 'add-passenger' ? 'Place Passenger' :
+         mode === 'find-nearest' ? 'Find Nearest (Click Canvas)' :
+         mode === 'search-radius' ? 'Search Radius (Click Canvas)' :
+         mode === 'delete-driver' ? 'Delete Driver (Click on Car)' : 'Mode Selected'}
       </div>
       {loading && (
         <div className="loading-overlay">

@@ -7,14 +7,7 @@
 Driver drivers[MAX_DRIVERS];
 int driverCount = 0;
 
-// Internal structure for kNN
-typedef struct {
-    int idx;
-    double distSq;
-} NeighborResult;
-
-// ---------- KD-Tree Core ----------
-
+// Create Node
 Node* newNode(double x, double y, int idx, int axis) {
     Node* n = (Node*)malloc(sizeof(Node));
     n->point[0] = x;
@@ -25,114 +18,98 @@ Node* newNode(double x, double y, int idx, int axis) {
     return n;
 }
 
+// Insert
 Node* insert(Node* root, double x, double y, int idx, int depth) {
-    int cd = depth % K;
-    if (!root) return newNode(x, y, idx, cd);
+    if (root == NULL) {
+        return newNode(x, y, idx, depth % K);
+    }
 
-    if ((cd == 0 && x < root->point[0]) ||
-        (cd == 1 && y < root->point[1]))
-        root->left = insert(root->left, x, y, idx, depth + 1);
-    else
-        root->right = insert(root->right, x, y, idx, depth + 1);
+    int axis = depth % K;
+
+    if (axis == 0) { // X-axis
+        if (x < root->point[0])
+            root->left = insert(root->left, x, y, idx, depth + 1);
+        else
+            root->right = insert(root->right, x, y, idx, depth + 1);
+    } else { // Y-axis
+        if (y < root->point[1])
+            root->left = insert(root->left, x, y, idx, depth + 1);
+        else
+            root->right = insert(root->right, x, y, idx, depth + 1);
+    }
 
     return root;
 }
 
-void nearest(Node* root, double px, double py, int depth, int* bestIdx, double* bestDistSq) {
-    if (!root) return;
+// Distance function
+double distanceSquared(double p1[2], double p2[2]) {
+    double dx = p1[0] - p2[0];
+    double dy = p1[1] - p2[1];
+    return dx * dx + dy * dy;
+}
 
-    double dx = root->point[0] - px;
-    double dy = root->point[1] - py;
-    double distSq = dx * dx + dy * dy;
+// Nearest Neighbor
+void nearest(Node* root, double targetX, double targetY, 
+             int* bestIdx, double* bestDistSq, int depth) {
+    if (root == NULL)
+        return;
 
-    if (distSq < *bestDistSq) {
-        *bestDistSq = distSq;
+    double target[2] = {targetX, targetY};
+    double d = distanceSquared(root->point, target);
+
+    if (d < *bestDistSq) {
+        *bestDistSq = d;
         *bestIdx = root->index;
     }
 
-    int cd = depth % K;
-    double val = (cd == 0) ? px : py;
-    double split = root->point[cd];
+    int axis = depth % K;
 
-    Node* first = (val < split) ? root->left : root->right;
-    Node* second = (val < split) ? root->right : root->left;
+    Node *nextBranch, *otherBranch;
 
-    nearest(first, px, py, depth + 1, bestIdx, bestDistSq);
-
-    double diff = val - split;
-    if (diff * diff < *bestDistSq)
-        nearest(second, px, py, depth + 1, bestIdx, bestDistSq);
-}
-
-// k-Nearest Neighbors
-void kNearest(Node* root, double px, double py, int depth, 
-              NeighborResult* results, int k, int* foundCount) {
-    if (!root) return;
-
-    double dx = root->point[0] - px;
-    double dy = root->point[1] - py;
-    double distSq = dx * dx + dy * dy;
-
-    // Maintain a sorted list of nearest neighbors (simplified max-heap behavior)
-    int pos = -1;
-    if (*foundCount < k) {
-        pos = (*foundCount)++;
-    } else if (distSq < results[k-1].distSq) {
-        pos = k - 1;
+    if (target[axis] < root->point[axis]) {
+        nextBranch = root->left;
+        otherBranch = root->right;
+    } else {
+        nextBranch = root->right;
+        otherBranch = root->left;
     }
 
-    if (pos != -1) {
-        results[pos].idx = root->index;
-        results[pos].distSq = distSq;
-        // Bubble up to keep sorted by distance
-        for (int i = pos; i > 0 && results[i].distSq < results[i-1].distSq; i--) {
-            NeighborResult temp = results[i];
-            results[i] = results[i-1];
-            results[i-1] = temp;
-        }
+    nearest(nextBranch, targetX, targetY, bestIdx, bestDistSq, depth + 1);
+
+    double diff = target[axis] - root->point[axis];
+
+    if (diff * diff < *bestDistSq) {
+        nearest(otherBranch, targetX, targetY, bestIdx, bestDistSq, depth + 1);
     }
-
-    int cd = depth % K;
-    double val = (cd == 0) ? px : py;
-    double split = root->point[cd];
-
-    Node* first = (val < split) ? root->left : root->right;
-    Node* second = (val < split) ? root->right : root->left;
-
-    kNearest(first, px, py, depth + 1, results, k, foundCount);
-
-    double diff = val - split;
-    double maxDistSq = (*foundCount < k) ? DBL_MAX : results[k-1].distSq;
-    if (diff * diff < maxDistSq)
-        kNearest(second, px, py, depth + 1, results, k, foundCount);
 }
 
 // Range Search
-void rangeSearch(Node* root, double px, double py, double radiusSq, 
-                 int* results, int* resultCount) {
-    if (!root) return;
+void radiusSearch(Node* root, double targetX, double targetY, double radius, int depth, int* results, int* count) {
+    if (root == NULL)
+        return;
 
-    double dx = root->point[0] - px;
-    double dy = root->point[1] - py;
+    double dx = root->point[0] - targetX;
+    double dy = root->point[1] - targetY;
     double distSq = dx * dx + dy * dy;
 
-    if (distSq <= radiusSq) {
-        results[(*resultCount)++] = root->index;
+    if (distSq <= radius * radius) {
+        results[(*count)++] = root->index;
     }
 
-    int cd = root->axis;
-    double val = (cd == 0) ? px : py;
-    double split = root->point[cd];
-    double radius = sqrt(radiusSq);
+    int axis = depth % K;
+    double targetVal = (axis == 0) ? targetX : targetY;
 
-    if (val - radius <= split)
-        rangeSearch(root->left, px, py, radiusSq, results, resultCount);
-    if (val + radius >= split)
-        rangeSearch(root->right, px, py, radiusSq, results, resultCount);
+    if (targetVal - radius <= root->point[axis]) {
+        radiusSearch(root->left, targetX, targetY, radius, depth + 1, results, count);
+    }
+    if (targetVal + radius >= root->point[axis]) {
+        radiusSearch(root->right, targetX, targetY, radius, depth + 1, results, count);
+    }
 }
 
+// Free tree
 void freeTree(Node* root) {
-    if (!root) return;
+    if (root == NULL) return;
     freeTree(root->left);
     freeTree(root->right);
     free(root);
@@ -142,26 +119,20 @@ void freeTree(Node* root) {
 
 int addDriver(double x, double y) {
     if (driverCount >= MAX_DRIVERS) return -1;
-
     drivers[driverCount].x = x;
     drivers[driverCount].y = y;
     drivers[driverCount].active = 1;
-    int idx = driverCount;
-    driverCount++;
-    return idx;
+    return driverCount++;
 }
 
 int removeDriver(int index) {
-    if (index < 0 || index >= driverCount) return 0;
-    if (!drivers[index].active) return 0;
-
+    if (index < 0 || index >= driverCount || !drivers[index].active) return 0;
     drivers[index].active = 0;
     return 1;
 }
 
 int updateDriverPosition(int index, double newX, double newY) {
-    if (index < 0 || index >= driverCount || !drivers[index].active)
-        return 0;
+    if (index < 0 || index >= driverCount || !drivers[index].active) return 0;
     drivers[index].x = newX;
     drivers[index].y = newY;
     return 1;
@@ -176,55 +147,17 @@ int findNearestDriver(double px, double py, int* outIdx, double* outDist) {
             activeCount++;
         }
     }
-
     if (activeCount == 0) {
         *outIdx = -1;
-        *outDist = 0;
         return 0;
     }
-
     double bestDistSq = DBL_MAX;
     int bestIdx = -1;
-    nearest(root, px, py, 0, &bestIdx, &bestDistSq);
-
+    nearest(root, px, py, &bestIdx, &bestDistSq, 0);
     *outIdx = bestIdx;
     *outDist = sqrt(bestDistSq);
-
     freeTree(root);
     return 1;
-}
-
-int findKNearestDrivers(double px, double py, int k, int* outIndices, double* outDists) {
-    Node* root = NULL;
-    int activeCount = 0;
-    for (int i = 0; i < driverCount; i++) {
-        if (drivers[i].active) {
-            root = insert(root, drivers[i].x, drivers[i].y, i, 0);
-            activeCount++;
-        }
-    }
-
-    if (activeCount == 0 || k <= 0) return 0;
-    if (k > activeCount) k = activeCount;
-
-    NeighborResult* results = (NeighborResult*)malloc(k * sizeof(NeighborResult));
-    for (int i = 0; i < k; i++) {
-        results[i].distSq = DBL_MAX;
-        results[i].idx = -1;
-    }
-    int foundCount = 0;
-
-    kNearest(root, px, py, 0, results, k, &foundCount);
-
-    for (int i = 0; i < foundCount; i++) {
-        outIndices[i] = results[i].idx;
-        outDists[i] = sqrt(results[i].distSq);
-    }
-
-    int finalCount = foundCount;
-    free(results);
-    freeTree(root);
-    return finalCount;
 }
 
 int findDriversInRadius(double px, double py, double radius, int* outIndices) {
@@ -236,21 +169,12 @@ int findDriversInRadius(double px, double py, double radius, int* outIndices) {
             activeCount++;
         }
     }
-
     if (activeCount == 0) return 0;
 
-    int* results = (int*)malloc(activeCount * sizeof(int));
-    int resultCount = 0;
-    rangeSearch(root, px, py, radius * radius, results, &resultCount);
-
-    for (int i = 0; i < resultCount; i++) {
-        outIndices[i] = results[i];
-    }
-
-    int finalCount = resultCount;
-    free(results);
+    int count = 0;
+    radiusSearch(root, px, py, radius, 0, outIndices, &count);
     freeTree(root);
-    return finalCount;
+    return count;
 }
 
 int getDriverCount(void) {

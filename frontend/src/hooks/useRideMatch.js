@@ -3,7 +3,7 @@ import * as api from '../api/client';
 
 export function useRideMatch() {
   const [drivers, setDrivers] = useState([]);
-  const [mode, setMode] = useState('driver'); // 'driver' | 'passenger' | 'find-k' | 'range'
+  const [mode, setMode] = useState('add-driver'); // 'add-driver' | 'add-passenger' | 'find-nearest' | 'search-radius' | 'delete-driver'
   const [matchResult, setMatchResult] = useState(null); // Can be single object or array
   const [passengerPos, setPassengerPos] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -12,6 +12,7 @@ export function useRideMatch() {
   // Search parameters
   const [kValue, setKValue] = useState(3);
   const [radiusValue, setRadiusValue] = useState(100);
+  
 
   const healthInterval = useRef(null);
 
@@ -47,17 +48,20 @@ export function useRideMatch() {
   const handleCanvasClick = useCallback(async (x, y) => {
     setLoading(true);
     try {
-      if (mode === 'driver') {
-        // Check if we clicked on an existing driver to remove it
+      if (mode === 'add-driver') {
+        const result = await api.addDriver(x, y);
+        if (result.status === 'ok') {
+          await refreshDrivers();
+        }
+      } else if (mode === 'delete-driver') {
         const clickedDriver = drivers.find(d => {
           const dist = Math.sqrt((d.x - x)**2 + (d.y - y)**2);
-          return dist < 15;
+          return dist < 20; // Slightly larger hit area for easier deletion
         });
 
         if (clickedDriver) {
           await api.removeDriver(clickedDriver.index);
           await refreshDrivers();
-          // Clear match if matched driver was removed
           setMatchResult(prev => {
             if (!prev) return null;
             if (Array.isArray(prev)) {
@@ -68,37 +72,26 @@ export function useRideMatch() {
             }
             return prev;
           });
-        } else {
-          const result = await api.addDriver(x, y);
-          if (result.status === 'ok') {
-            await refreshDrivers();
-          }
         }
-      } else {
+      } else if (mode === 'add-passenger') {
         setPassengerPos({ x, y });
         setMatchResult(null);
-        
-        let result;
-        if (mode === 'passenger') {
-          result = await api.findNearest(x, y);
-          if (result.status === 'ok') {
-            setMatchResult({
-              index: result.index,
-              x: result.x,
-              y: result.y,
-              distance: result.distance,
-            });
-          }
-        } else if (mode === 'find-k') {
-          result = await api.findKNearest(x, y, kValue);
-          if (result.status === 'ok') {
-            setMatchResult(result.results); // Array of results
-          }
-        } else if (mode === 'range') {
-          result = await api.findRange(x, y, radiusValue);
-          if (result.status === 'ok') {
-            setMatchResult(result.results); // Array of results
-          }
+      } else if (mode === 'find-nearest') {
+        setPassengerPos({ x, y });
+        const result = await api.findNearest(x, y);
+        if (result.status === 'ok') {
+          setMatchResult({
+            index: result.index,
+            x: result.x,
+            y: result.y,
+            distance: result.distance,
+          });
+        }
+      } else if (mode === 'search-radius') {
+        setPassengerPos({ x, y });
+        const result = await api.findRange(x, y, radiusValue);
+        if (result.status === 'ok') {
+          setMatchResult(result.results || []);
         }
       }
     } catch (err) {
@@ -169,6 +162,48 @@ export function useRideMatch() {
     }
   }, []);
 
+  const triggerFindNearest = useCallback(async () => {
+    if (!passengerPos) return;
+    setLoading(true);
+    try {
+      const result = await api.findNearest(passengerPos.x, passengerPos.y);
+      if (result.status === 'ok') {
+        setMatchResult({
+          index: result.index,
+          x: result.x,
+          y: result.y,
+          distance: result.distance,
+        });
+      }
+    } catch (err) {
+      console.error('Find nearest error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [passengerPos]);
+
+  const triggerSearchRadius = useCallback(async () => {
+    if (!passengerPos) return;
+    setLoading(true);
+    try {
+      const result = await api.findRange(passengerPos.x, passengerPos.y, radiusValue);
+      if (result.status === 'ok') {
+        setMatchResult(result.results || []);
+      }
+    } catch (err) {
+      console.error('Search radius error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [passengerPos, radiusValue]);
+
+  // Auto-trigger range search when radius changes
+  useEffect(() => {
+    if (mode === 'search-radius' && passengerPos) {
+      triggerSearchRadius();
+    }
+  }, [radiusValue, mode, passengerPos, triggerSearchRadius]);
+
   return {
     drivers,
     mode,
@@ -185,5 +220,7 @@ export function useRideMatch() {
     handleUpdateDriver,
     handleRemoveDriver,
     handleClear,
+    triggerFindNearest,
+    triggerSearchRadius,
   };
 }

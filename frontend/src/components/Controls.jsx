@@ -2,126 +2,106 @@ export default function Controls({
   mode, 
   setMode, 
   onClear,
-  onRemove,
-  kValue,
-  setKValue,
   radiusValue,
-  setRadiusValue
+  setRadiusValue,
+  onFindNearest,
+  onSearchRadius
 }) {
   return (
     <>
       {/* Mode Selection */}
       <div className="glass-card">
-        <div className="card-title">Mode</div>
+        <div className="card-title">Actions</div>
         <div className="mode-buttons">
           <button
-            id="btn-driver-mode"
-            className={`mode-btn driver ${mode === 'driver' ? 'active' : ''}`}
-            onClick={() => setMode('driver')}
+            id="btn-add-driver"
+            className={`mode-btn driver ${mode === 'add-driver' ? 'active' : ''}`}
+            onClick={() => setMode('add-driver')}
           >
             <div className="mode-btn-icon">🚗</div>
             <div className="mode-btn-text">
               <span>Add Driver</span>
-              <span>Click to place / drag to move</span>
+              <span>Click to place driver</span>
             </div>
           </button>
           
           <button
-            id="btn-passenger-mode"
-            className={`mode-btn passenger ${mode === 'passenger' ? 'active' : ''}`}
-            onClick={() => setMode('passenger')}
+            id="btn-add-passenger"
+            className={`mode-btn passenger ${mode === 'add-passenger' ? 'active' : ''}`}
+            onClick={() => setMode('add-passenger')}
           >
             <div className="mode-btn-icon">🧑</div>
             <div className="mode-btn-text">
-              <span>Nearest Neighbor</span>
-              <span>Find the single closest driver</span>
+              <span>Add Passenger</span>
+              <span>Place/Move passenger</span>
             </div>
           </button>
 
           <button
-            id="btn-find-k-mode"
-            className={`mode-btn find-k ${mode === 'find-k' ? 'active' : ''}`}
-            onClick={() => setMode('find-k')}
+            id="btn-find-nearest"
+            className={`mode-btn nearest ${mode === 'find-nearest' ? 'active' : ''}`}
+            onClick={() => {
+              setMode('find-nearest');
+              onFindNearest();
+            }}
           >
-            <div className="mode-btn-icon">📶</div>
+            <div className="mode-btn-icon">🎯</div>
             <div className="mode-btn-text">
-              <span>K-Nearest</span>
-              <span>Find the K closest drivers</span>
+              <span>Find Nearest</span>
+              <span>Locate closest driver</span>
             </div>
           </button>
 
           <button
-            id="btn-range-mode"
-            className={`mode-btn range ${mode === 'range' ? 'active' : ''}`}
-            onClick={() => setMode('range')}
+            id="btn-search-radius"
+            className={`mode-btn range ${mode === 'search-radius' ? 'active' : ''}`}
+            onClick={() => {
+              setMode('search-radius');
+              onSearchRadius();
+            }}
           >
             <div className="mode-btn-icon">⭕</div>
             <div className="mode-btn-text">
-              <span>Range Search</span>
-              <span>Find drivers within radius</span>
+              <span>Search in Radius</span>
+              <span>Find within distance</span>
+            </div>
+          </button>
+
+          <button
+            id="btn-delete-driver"
+            className={`mode-btn delete ${mode === 'delete-driver' ? 'active' : ''}`}
+            onClick={() => setMode('delete-driver')}
+          >
+            <div className="mode-btn-icon">❌</div>
+            <div className="mode-btn-text">
+              <span>Delete Driver</span>
+              <span>Click driver to remove</span>
             </div>
           </button>
         </div>
       </div>
 
       {/* Parameters */}
-      {(mode === 'find-k' || mode === 'range') && (
+      {mode === 'search-radius' && (
         <div className="glass-card">
-          <div className="card-title">Parameters</div>
+          <div className="card-title">Search Parameters</div>
           <div className="param-controls">
-            {mode === 'find-k' && (
-              <div className="param-item">
-                <label>K Value (1-10): {kValue}</label>
-                <input 
-                  type="range" 
-                  min="1" 
-                  max="10" 
-                  value={kValue} 
-                  onChange={(e) => setKValue(parseInt(e.target.value))}
-                />
-              </div>
-            )}
-            {mode === 'range' && (
-              <div className="param-item">
-                <label>Radius (50-300): {radiusValue}</label>
-                <input 
-                  type="range" 
-                  min="50" 
-                  max="300" 
-                  value={radiusValue} 
-                  onChange={(e) => setRadiusValue(parseInt(e.target.value))}
-                />
-              </div>
-            )}
+            <div className="param-item">
+              <label>Radius (50-300): {radiusValue}</label>
+              <input 
+                type="range" 
+                min="50" 
+                max="300" 
+                value={radiusValue} 
+                onChange={(e) => {
+                  setRadiusValue(parseInt(e.target.value));
+                  // Optionally trigger search again if radius changes
+                }}
+              />
+            </div>
           </div>
         </div>
       )}
-
-      {/* Manual Management */}
-      <div className="glass-card">
-        <div className="card-title">Manual Management</div>
-        <div className="manual-remove">
-          <input 
-            type="number" 
-            placeholder="Driver ID" 
-            id="manual-remove-input"
-            className="id-input"
-          />
-          <button 
-            className="action-btn danger"
-            onClick={() => {
-              const input = document.getElementById('manual-remove-input');
-              const id = parseInt(input.value);
-              if (!isNaN(id)) {
-                onRemove(id);
-                input.value = '';
-              }
-            }}
-          >
-            Delete ID
-          </button>
-        </div>
-      </div>
 
       {/* Actions */}
       <div className="glass-card">

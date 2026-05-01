@@ -21,6 +21,8 @@ function App() {
     handleUpdateDriver,
     handleRemoveDriver,
     handleClear,
+    triggerFindNearest,
+    triggerSearchRadius,
   } = useRideMatch();
 
   return (
@@ -41,11 +43,10 @@ function App() {
           mode={mode} 
           setMode={setMode} 
           onClear={handleClear} 
-          onRemove={handleRemoveDriver}
-          kValue={kValue}
-          setKValue={setKValue}
           radiusValue={radiusValue}
           setRadiusValue={setRadiusValue}
+          onFindNearest={triggerFindNearest}
+          onSearchRadius={triggerSearchRadius}
         />
 
         {/* Stats */}
